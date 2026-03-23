@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars (gitignored) and adjust.
+# aws_account_id is taken from the caller at apply time.
+
+aws_region = "us-east-1"
+
+project_name = "cct"
+environment  = "dev"
+
+abac_user_tag_key = "user_id"
+
+# Must be globally unique
+static_bucket_name = "cct-example-static-001"
+
+ecr_repository_name = "cct-user-apps"
+
+name_prefix = "cct"
+
+default_tags = {
+  Owner = "platform"
+}
