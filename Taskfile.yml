@@ -208,8 +208,8 @@ tasks:
       - docker compose up -d --build
       - open http://localhost
 
-  run:cli:
-    desc: Run the CLI tool
+  diagram:
+    desc: Generate the architecture diagram
     cmds:
       - |
-        uv run promptlib-cli --help
+        uv run scripts/generate_architecture_diagram.py

@@ -2,6 +2,9 @@
 
 Self-contained AWS publishing platform for **static sites** (S3) and **container images** (ECR), with a **registry HTTP API** (API Gateway + Lambda + DynamoDB) and **EventBridge** hooks for reconciliation. **Terraform** provisions **shared resources only**; application deployments use the **AWS CLI** (or SDK) guided by the Claude Code skill.
 
+## Diagram
+
+![](./docs/cct_to_aws_architecture.png)
 ## What Terraform creates
 
 - Versioned, SSE-S3 encrypted **S3 bucket** with **Amazon EventBridge notifications** enabled.
@@ -18,6 +21,10 @@ Attach the three managed policies (or copies of them) to your **IAM Identity Cen
 
 - **CloudFront, WAF, ALB** for a shared internal hostname — add these in a follow-up change without altering the core registry model.
 - **Per-app** ECS services, App Runner services, or other runtime resources — create and update those with the **CLI** and record URLs via **`/v1/register`**.
+
+## URL model (planned, part 2)
+
+Static sites use **one shared HTTPS hostname** with **paths that mirror the S3 prefix**: `https://<shared_host>/<user_tag>/<app_id>/` (same segments as `s3://$BUCKET/<user_tag>/<app_id>/`). See `docs/superpowers/specs/2026-03-23-platform-design.md` for the full note on containers and Register.
 
 ## Deploy shared infrastructure
 

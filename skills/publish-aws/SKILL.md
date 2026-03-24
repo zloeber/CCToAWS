@@ -42,7 +42,7 @@ The value for the ABAC prefix usually comes from the **same** session tag (for e
    - `deployment_type`: `static`
    - `app_id`: lowercase identifier (`a-z0-9-`, 2–63 chars)
    - `revision`: git SHA or timestamp
-   - `static_url`: HTTPS URL users will use (CloudFront/ALB/internal URL as deployed)
+   - `static_url`: canonical HTTPS base for the site once the shared edge exists — **`https://<shared_host>/<user_tag>/<app_id>/`** (same path as the S3 prefix; trailing slash recommended)
 
 ## Workflow (container)
 
@@ -65,7 +65,7 @@ Minimal JSON body for static:
   "app_id": "my-site",
   "deployment_type": "static",
   "revision": "abc123",
-  "static_url": "https://internal.example.com/sites/me/my-site/"
+  "static_url": "https://apps.example.internal/alice/my-site/"
 }
 ```
 
@@ -89,4 +89,4 @@ ECR and S3 changes emit events to the **reconcile** Lambda (logging in v1). The 
 
 ## Escalation
 
-- **CloudFront / WAF / ALB** in front of static origins or services are **platform extensions** — plan separately; keep registry URLs accurate when those endpoints change.
+- **CloudFront / WAF / ALB** in front of static origins or services are **platform extensions** — plan separately; keep registry URLs accurate when those endpoints change. Static delivery assumes **one shared hostname** and path **`/<user_tag>/<app_id>/`** aligned with the bucket prefix.
