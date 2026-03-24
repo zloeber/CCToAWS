@@ -74,6 +74,8 @@ resource "aws_cloudfront_distribution" "this" {
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
+  web_acl_id = var.web_acl_arn
+
   depends_on = [aws_cloudfront_origin_access_control.this]
 }
 

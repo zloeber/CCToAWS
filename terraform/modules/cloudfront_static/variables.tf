@@ -39,3 +39,10 @@ variable "dashboard_path_pattern" {
   default     = ""
   description = "If set (e.g. /_platform/dashboard/*), add a cache behavior for platform dashboard assets."
 }
+
+variable "web_acl_arn" {
+  type        = string
+  nullable    = true
+  default     = null
+  description = "Optional WAFv2 Web ACL ARN (CLOUDFRONT scope, created in us-east-1)."
+}

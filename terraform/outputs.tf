@@ -80,3 +80,43 @@ output "cognito_dashboard_client_id" {
   description = "Cognito app client ID for the dashboard SPA (JWT audience)."
   value       = try(module.cognito_dashboard[0].client_id, null)
 }
+
+output "container_publish_alb_dns_name" {
+  description = "Public ALB DNS name for container runtime_url (HTTPS)."
+  value       = try(module.alb_ecs_publish[0].alb_dns_name, null)
+}
+
+output "container_publish_https_url" {
+  description = "Base URL for traffic through the publish ALB."
+  value       = local.alb_ecs_enabled ? "https://${module.alb_ecs_publish[0].alb_dns_name}" : null
+}
+
+output "container_publish_ecs_cluster_name" {
+  description = "ECS cluster for Fargate services behind the ALB."
+  value       = try(module.alb_ecs_publish[0].ecs_cluster_name, null)
+}
+
+output "container_publish_target_group_arn" {
+  description = "Default ALB target group ARN."
+  value       = try(module.alb_ecs_publish[0].target_group_arn, null)
+}
+
+output "container_publish_vpc_id" {
+  description = "VPC created for the ALB/ECS publish stack."
+  value       = try(module.vpc_app[0].vpc_id, null)
+}
+
+output "iam_policy_container_publish_arn" {
+  description = "IAM policy for registering task definitions and updating ECS services on the publish cluster."
+  value       = try(aws_iam_policy.container_publish[0].arn, null)
+}
+
+output "waf_cloudfront_web_acl_arn" {
+  description = "WAFv2 Web ACL ARN for CloudFront (us-east-1), if enabled."
+  value       = try(module.waf_cloudfront[0].arn, null)
+}
+
+output "waf_alb_web_acl_arn" {
+  description = "WAFv2 Web ACL ARN for the ALB (regional), if enabled."
+  value       = try(module.waf_regional[0].arn, null)
+}

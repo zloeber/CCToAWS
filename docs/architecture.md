@@ -1,6 +1,6 @@
 # CCToAWS architecture
 
-This document describes the shared publishing platform: **registry API**, **static sites** (S3), **containers** (ECR), optional **CloudFront**, optional **web dashboard** (Cognito + JWT), and **EventBridge** reconciliation.
+This document describes the shared publishing platform: **registry API**, **static sites** (S3), **containers** (ECR), optional **CloudFront**, optional **VPC + ALB + ECS Fargate** for container ingress, optional **web dashboard** (Cognito + JWT), and **EventBridge** reconciliation.
 
 ## Diagram
 
@@ -13,6 +13,12 @@ flowchart TB
 
   subgraph optional_edge["Optional: HTTPS edge"]
     CF["CloudFront + ACM<br/>shared hostname"]
+  end
+
+  subgraph optional_compute["Optional: Container ingress"]
+    VPC["VPC + NAT"]
+    ALB["Application LB<br/>HTTPS"]
+    ECS["ECS Fargate<br/>cluster + tasks"]
   end
 
   subgraph optional_id["Optional: Dashboard identity"]
@@ -40,6 +46,11 @@ flowchart TB
   CLI -->|"SigV4"| IAMR
   CLI -->|"ABAC prefix write"| S3
   CLI -->|"push image"| ECR
+  CLI -->|"ecs update-service<br/>task defs"| ECS
+
+  VPC --> ALB
+  ALB --> ECS
+  ECS -->|"pull"| ECR
 
   BR -->|"OAuth sign-in"| COG
   BR -->|"Bearer access_token"| JWTR
@@ -65,6 +76,7 @@ flowchart TB
 | **Browser → Cognito** | OAuth login for the dashboard (PKCE). |
 | **Browser → JWT routes** | List/delete registry rows by **`user_id`** (must match `user_id` on register items). |
 | **Browser → CloudFront → S3** | Serve static sites and the dashboard SPA from the same bucket (path-based). |
+| **CLI → VPC / ALB / ECS** (optional) | Fargate tasks in private subnets; ALB terminates TLS; NAT for image pull. Use outputs for **`runtime_url`**. |
 | **EventBridge** | ECR and S3 notifications to the reconcile Lambda (registry remains source of truth). |
 
 ## Regenerate the PNG

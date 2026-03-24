@@ -21,13 +21,17 @@ A **Mermaid** version (same architecture, easy to edit in-repo) is in [docs/arch
 
 - **Optionally** (`enable_dashboard = true` and valid OAuth callback/logout URLs, or `static_site_hostname` for defaults): **Cognito** user pool + app client (hosted UI), **JWT** routes on the HTTP API (`GET/DELETE /v1/dashboard/apps…`), and a small **static SPA** uploaded to `s3://$BUCKET/_platform/dashboard/`. **Removing** an app in the UI only deletes the **registry row** in DynamoDB (not S3 or ECR objects). For the dashboard to list an app, **`POST /v1/register` must include `user_id`** matching the Cognito user’s **`email`** or **`preferred_username`**.
 
-Attach the three managed policies (or copies of them) to your **IAM Identity Center permission sets** as appropriate. Configure Entra / Identity Center to pass a **session tag** whose key matches `abac_user_tag_key` (for example `user_id`).
+- **Optionally** (`enable_alb_ecs = true` and **`alb_certificate_arn`** in the **same region as `aws_region`**): **VPC** (two public + two private subnets, **single NAT gateway** — ongoing AWS charges), **internet-facing Application Load Balancer** (HTTP→HTTPS redirect, TLS 1.3 policy), **default target group**, **ECS Fargate cluster**, and (by default) a **placeholder nginx** service so the ALB passes health checks. Outputs include **`container_publish_https_url`** for **`runtime_url`** in **`POST /v1/register`**. Attach **`iam_policy_container_publish_arn`** to publisher roles for **`ecs:RegisterTaskDefinition`** and **`ecs:UpdateService`** on that cluster. Set **`deploy_placeholder_container_service = false`** for ALB + empty target group only.
+
+- **Optionally** — **AWS WAFv2** on **CloudFront** (`enable_waf_cloudfront`) and/or the **publish ALB** (`enable_waf_alb`), using **managed rule groups** (see **`waf.tf`** defaults). **Optionally** — **ENHANCED ECR image scanning** (`enable_ecr_enhanced_scanning`) for the shared repository pattern.
+
+Attach the three core managed policies (or copies), plus **`container_publish`** when **`enable_alb_ecs`** is on, to your **IAM Identity Center permission sets** as appropriate. Configure Entra / Identity Center to pass a **session tag** whose key matches `abac_user_tag_key` (for example `user_id`).
 
 ## What Terraform does *not* create (v1)
 
-- **WAF** or **ALB** — add if you need them without altering the core registry model.
-- **DNS records** for the static hostname — point your hostname at CloudFront using outputs after apply.
-- **Per-app** ECS services, App Runner services, or other runtime resources — create and update those with the **CLI** and record URLs via **`/v1/register`**.
+- **WAF** (fronting CloudFront or the ALB).
+- **DNS records** for the static hostname or ALB — point hostnames at CloudFront or the ALB using outputs after apply (Route 53 alias or CNAME).
+- **Additional** listener rules, target groups, or ECS services beyond the **default** placeholder — add with Terraform or **CLI** (`aws ecs update-service`, new services) and record URLs via **`/v1/register`**. **App Runner** remains an alternative if you do not enable **`enable_alb_ecs`**.
 
 ## URL model (shared hostname + paths)
 
@@ -51,7 +55,7 @@ terraform plan
 terraform apply
 ```
 
-Copy outputs (`http_api_endpoint`, `static_bucket_id`, `ecr_repository_url`, IAM policy ARNs) into your team’s documentation or into `~/.config/cct-aws/config.json` for the skill.
+Copy outputs (`http_api_endpoint`, `static_bucket_id`, `ecr_repository_url`, `container_publish_https_url` if used, IAM policy ARNs) into your team’s documentation or into `~/.config/cct-aws/config.json` for the skill.
 
 ## CLI flows (after SSO login)
 
@@ -61,7 +65,7 @@ aws sts get-caller-identity
 ```
 
 - **Static:** `scripts/publish-static.sh` — sync to `s3://${bucket}/${user_id}/...`, then `POST /v1/register` with `deployment_type=static`.
-- **Container:** build and push to ECR, create/update **App Runner** (or ECS) out of band, then `POST /v1/register` with `deployment_type=container` and `image_uri` / `runtime_url`.
+- **Container:** build and push to ECR; if **`enable_alb_ecs`** is on, register a task definition and **`aws ecs update-service`** (see **`iam_policy_container_publish_arn`**) or use the placeholder image until you replace it; otherwise use **App Runner** or another runtime. Then `POST /v1/register` with `deployment_type=container` and `image_uri` / `runtime_url` (often **`container_publish_https_url`** or a path on that ALB once you add rules).
 
 Use **`aws` CLI v2** with **`aws sigv4-sign-request`** or **`awscurl`** patterns, or small wrappers, to call the HTTP API with the same SSO credentials.
 
@@ -73,6 +77,8 @@ See `skills/publish-aws/SKILL.md` — copy into your Claude Code skills director
 
 - **Shared ECR** with only principal-tag conditions is **weaker isolation** than per-user repositories. For stricter isolation, create additional repositories via CLI with naming `u-${user_id}-*` and narrow IAM further.
 - **Register API** keys rows by **SigV4 caller ARN**; keep permission boundaries tight so users cannot assume each other’s roles.
+- **WAF (optional):** Set **`enable_waf_cloudfront`** and/or **`enable_waf_alb`** to attach **AWS WAFv2** with **managed rule groups** (Common, Known bad inputs, Linux, IP reputation). CloudFront WAF is always created in **us-east-1** (provider alias). Use **`waf_block_mode = false`** for **count-only** mode (metrics / sampled requests without blocking). WAF adds **per-request and rule charges** — review AWS pricing before enabling.
+- **Container image scanning:** The shared ECR repository already has **basic scan on push**. Set **`enable_ecr_enhanced_scanning = true`** for **ENHANCED** scanning (Amazon Inspector); this **replaces** the account’s **ECR registry scanning configuration** in that region for the rules you define (here: images matching the shared repo name). Prefer enabling in a **dedicated** account if you share the region with other workloads.
 
 ## License
 

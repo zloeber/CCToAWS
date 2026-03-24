@@ -6,6 +6,8 @@ module "s3_static" {
 locals {
   static_delivery_enabled = var.static_site_hostname != null && var.static_site_certificate_arn != null
 
+  alb_ecs_enabled = var.enable_alb_ecs && var.alb_certificate_arn != null && var.alb_certificate_arn != ""
+
   dashboard_callback_urls = length(var.dashboard_cognito_callback_urls) > 0 ? var.dashboard_cognito_callback_urls : (
     var.static_site_hostname != null ? ["https://${var.static_site_hostname}/_platform/dashboard/callback.html"] : []
   )
@@ -35,6 +37,7 @@ module "cloudfront_static" {
   acm_certificate_arn         = var.static_site_certificate_arn
   price_class                 = var.static_site_price_class
   dashboard_path_pattern      = local.dashboard_enabled ? "/_platform/dashboard/*" : ""
+  web_acl_arn                 = length(module.waf_cloudfront) > 0 ? module.waf_cloudfront[0].arn : null
 
   depends_on = [module.s3_static]
 }
@@ -47,6 +50,30 @@ module "cognito_dashboard" {
   domain_prefix = local.cognito_domain_prefix
   callback_urls = local.dashboard_callback_urls
   logout_urls   = local.dashboard_logout_urls
+}
+
+module "vpc_app" {
+  count  = local.alb_ecs_enabled ? 1 : 0
+  source = "./modules/vpc_app"
+
+  name_prefix = "${var.name_prefix}-${var.environment}"
+  vpc_cidr    = var.container_publish_vpc_cidr
+}
+
+module "alb_ecs_publish" {
+  count  = local.alb_ecs_enabled ? 1 : 0
+  source = "./modules/alb_ecs_publish"
+
+  name_prefix                = "${var.name_prefix}-${var.environment}"
+  vpc_id                     = module.vpc_app[0].vpc_id
+  public_subnet_ids          = module.vpc_app[0].public_subnet_ids
+  private_subnet_ids         = module.vpc_app[0].private_subnet_ids
+  certificate_arn            = var.alb_certificate_arn
+  ingress_cidr_blocks        = var.alb_ingress_cidr_blocks
+  deploy_placeholder_service = var.deploy_placeholder_container_service
+  container_image            = var.placeholder_container_image
+
+  depends_on = [module.vpc_app]
 }
 
 module "ecr_shared" {
@@ -96,5 +123,26 @@ check "dashboard_callbacks" {
   assert {
     condition     = !var.enable_dashboard || (length(local.dashboard_callback_urls) > 0 && length(local.dashboard_logout_urls) > 0)
     error_message = "When enable_dashboard is true, set dashboard_cognito_callback_urls and dashboard_cognito_logout_urls, or set static_site_hostname so defaults apply."
+  }
+}
+
+check "alb_ecs_certificate" {
+  assert {
+    condition     = !var.enable_alb_ecs || (var.alb_certificate_arn != null && var.alb_certificate_arn != "")
+    error_message = "When enable_alb_ecs is true, set alb_certificate_arn to an ACM certificate in the same region as aws_region."
+  }
+}
+
+check "waf_cloudfront_requires_cf" {
+  assert {
+    condition     = !var.enable_waf_cloudfront || local.static_delivery_enabled
+    error_message = "enable_waf_cloudfront requires CloudFront (static_site_hostname + static_site_certificate_arn)."
+  }
+}
+
+check "waf_alb_requires_alb" {
+  assert {
+    condition     = !var.enable_waf_alb || local.alb_ecs_enabled
+    error_message = "enable_waf_alb requires enable_alb_ecs with a valid alb_certificate_arn."
   }
 }

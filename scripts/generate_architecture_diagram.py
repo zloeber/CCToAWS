@@ -17,10 +17,10 @@ import argparse
 from pathlib import Path
 
 from diagrams import Cluster, Diagram, Edge
-from diagrams.aws.compute import EC2ContainerRegistry, Lambda
+from diagrams.aws.compute import EC2ContainerRegistry, ElasticContainerService, Lambda
 from diagrams.aws.database import Dynamodb
 from diagrams.aws.integration import Eventbridge
-from diagrams.aws.network import APIGateway, CloudFront
+from diagrams.aws.network import APIGateway, CloudFront, ELB, VPC
 from diagrams.aws.security import Cognito, IAM
 from diagrams.aws.storage import S3
 from diagrams.onprem.client import User
@@ -52,6 +52,11 @@ def build_diagram(out_base: Path, direction: str) -> None:
         with Cluster("Optional: dashboard identity"):
             cognito = Cognito("Cognito\nHosted UI")
 
+        with Cluster("Optional: VPC + ALB + ECS"):
+            _vpc = VPC("VPC\npublic + private")
+            alb = ELB("ALB\nHTTPS")
+            ecs = ElasticContainerService("ECS\nFargate")
+
         with Cluster("Registry API"):
             http_api = APIGateway("HTTP API\nIAM + JWT routes")
             api_lambda = Lambda("registry-api\nLambda")
@@ -68,6 +73,10 @@ def build_diagram(out_base: Path, direction: str) -> None:
         iam_cli >> Edge(label="SigV4") >> http_api
         iam_cli >> Edge(label="ABAC writes", style="dashed") >> bucket
         iam_cli >> Edge(label="docker push", style="dashed") >> ecr
+        iam_cli >> Edge(label="ECS deploy", style="dashed") >> ecs
+        _vpc >> alb
+        alb >> Edge(label="forward") >> ecs
+        ecr >> Edge(label="image pull", style="dashed") >> ecs
 
         browser >> Edge(label="OAuth PKCE", style="dashed") >> cognito
         browser >> Edge(label="HTTPS") >> cf

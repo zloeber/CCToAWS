@@ -31,3 +31,19 @@ default_tags = {
 # dashboard_cognito_domain_prefix = "cct-dev-dash" # must be globally unique in the account/region
 # dashboard_cognito_callback_urls = ["http://localhost:5173/_platform/dashboard/callback.html"]
 # dashboard_cognito_logout_urls     = ["http://localhost:5173/_platform/dashboard/index.html"]
+
+# Optional: VPC + ALB + ECS Fargate for container apps (ACM must be in the same region as aws_region).
+# enable_alb_ecs = true
+# alb_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# alb_ingress_cidr_blocks = ["10.0.0.0/8"]
+# container_publish_vpc_cidr = "10.42.0.0/16"
+# deploy_placeholder_container_service = true
+# placeholder_container_image = "public.ecr.aws/docker/library/nginx:alpine"
+
+# Optional: AWS WAF managed rule groups (extra cost). CloudFront WAF is always created in us-east-1.
+# enable_waf_cloudfront = true
+# enable_waf_alb        = true
+# waf_block_mode        = true   # false = count-only (observe without blocking)
+
+# Optional: Inspector-based ECR image scanning for the shared repo name (replaces regional registry scanning config).
+# enable_ecr_enhanced_scanning = true

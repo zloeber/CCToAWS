@@ -49,7 +49,7 @@ The value for the ABAC prefix usually comes from the **same** session tag (for e
 
 1. `aws ecr get-login-password` → `docker login` to the shared registry.
 2. Tag and push: `$ECR_REPO_URL:$USER_TAG-$APP_ID-$REV` (or your org’s convention).
-3. Create/update **App Runner** or **ECS** using AWS CLI (not Terraform for v1).
+3. Run the workload: if your stack uses **`enable_alb_ecs`**, deploy to the shared **ECS cluster** behind the **ALB** (see Terraform output **`container_publish_https_url`** / **`container_publish_ecs_cluster_name`**) and IAM policy **`iam_policy_container_publish_arn`**; otherwise create/update **App Runner** or another runtime via CLI.
 4. **`POST /v1/register`** with `deployment_type=container`, `image_uri`, and `runtime_url` (service URL).
 
 ## Register API (authoritative)
