@@ -1,0 +1,6 @@
+[tools]
+awscli = "latest"
+python = "3.13"
+task = "latest"
+terraform = "latest"
+uv = "latest"
