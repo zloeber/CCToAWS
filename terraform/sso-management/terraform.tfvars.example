@@ -1,0 +1,24 @@
+# Run from the **management** account (or delegated SSO admin). Copy values from workload `terraform output`.
+# aws configure --profile management
+
+management_region = "us-east-1"
+
+project_name = "cct"
+environment  = "platform"
+
+workload_aws_account_id = "123456789012"
+workload_aws_region   = "us-east-1"
+
+abac_user_tag_key = "user_id"
+
+static_bucket_arn  = "arn:aws:s3:::cct-example-static-001"
+ecr_repository_arn = "arn:aws:ecr:us-east-1:123456789012:repository/cct-user-apps"
+http_api_id        = "abc123def"
+
+permission_set_name        = "CCToAWS-Publisher"
+permission_set_description = "CCToAWS publisher (S3 + ECR + registry API)"
+
+# Optional: provision assignment to a group in the workload account (get principal_id from IAM Identity Center).
+# create_account_assignment     = true
+# assignment_principal_id       = "90677e7a94-b0f6-4526-8b2c-4ac10f207e7f"
+# assignment_principal_type     = "GROUP"

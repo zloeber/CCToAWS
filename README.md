@@ -25,11 +25,10 @@ A **Mermaid** version (same architecture, easy to edit in-repo) is in [docs/arch
 
 - **Optionally** — **AWS WAFv2** on **CloudFront** (`enable_waf_cloudfront`) and/or the **publish ALB** (`enable_waf_alb`), using **managed rule groups** (see **`waf.tf`** defaults). **Optionally** — **ENHANCED ECR image scanning** (`enable_ecr_enhanced_scanning`) for the shared repository pattern.
 
-Attach the three core managed policies (or copies), plus **`container_publish`** when **`enable_alb_ecs`** is on, to your **IAM Identity Center permission sets** as appropriate. Configure Entra / Identity Center to pass a **session tag** whose key matches `abac_user_tag_key` (for example `user_id`).
+Attach the three core managed policies (or copies), plus **`container_publish`** when **`enable_alb_ecs`** is on, to your **IAM Identity Center permission sets** as appropriate — or deploy the **same effective permissions** from the **management account** using **`terraform/sso-management/`** (permission set + inline policy; see that README). Configure Entra / Identity Center to pass a **session tag** whose key matches `abac_user_tag_key` (for example `user_id`).
 
 ## What Terraform does *not* create (v1)
 
-- **WAF** (fronting CloudFront or the ALB).
 - **DNS records** for the static hostname or ALB — point hostnames at CloudFront or the ALB using outputs after apply (Route 53 alias or CNAME).
 - **Additional** listener rules, target groups, or ECS services beyond the **default** placeholder — add with Terraform or **CLI** (`aws ecs update-service`, new services) and record URLs via **`/v1/register`**. **App Runner** remains an alternative if you do not enable **`enable_alb_ecs`**.
 
