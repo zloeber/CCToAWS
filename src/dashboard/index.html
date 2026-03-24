@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Published applications</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Published applications</h1>
+      <span id="user-label" class="muted"></span>
+      <button type="button" id="btn-login" class="primary">Sign in</button>
+      <button type="button" id="btn-logout" hidden>Sign out</button>
+    </header>
+    <p class="muted">
+      Registry entries only — use the CLI to deploy. <code>user_id</code> in
+      <code>POST /v1/register</code> must match your Cognito
+      <code>preferred_username</code> or <code>email</code> to appear here.
+    </p>
+    <div id="err" class="error" hidden></div>
+    <div id="apps-empty" class="empty" hidden>No applications yet.</div>
+    <table id="apps-table" hidden>
+      <thead>
+        <tr>
+          <th>App</th>
+          <th>Type</th>
+          <th>Revision</th>
+          <th>URL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="apps-body"></tbody>
+    </table>
+    <script src="./config.js"></script>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

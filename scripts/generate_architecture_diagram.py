@@ -20,9 +20,10 @@ from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2ContainerRegistry, Lambda
 from diagrams.aws.database import Dynamodb
 from diagrams.aws.integration import Eventbridge
-from diagrams.aws.network import APIGateway
-from diagrams.aws.security import IAM
+from diagrams.aws.network import APIGateway, CloudFront
+from diagrams.aws.security import Cognito, IAM
 from diagrams.aws.storage import S3
+from diagrams.onprem.client import User
 
 
 def build_diagram(out_base: Path, direction: str) -> None:
@@ -42,10 +43,17 @@ def build_diagram(out_base: Path, direction: str) -> None:
         direction=direction,
         graph_attr=graph_attr,
     ):
-        principals = IAM("IAM principals\n(SSO / SigV4)")
+        iam_cli = IAM("IAM / CLI\n(SSO, SigV4)")
+        browser = User("Browser\ndashboard + sites")
+
+        with Cluster("Optional: HTTPS edge"):
+            cf = CloudFront("CloudFront\n+ ACM")
+
+        with Cluster("Optional: dashboard identity"):
+            cognito = Cognito("Cognito\nHosted UI")
 
         with Cluster("Registry API"):
-            http_api = APIGateway("HTTP API\n$default stage")
+            http_api = APIGateway("HTTP API\nIAM + JWT routes")
             api_lambda = Lambda("registry-api\nLambda")
 
         with Cluster("Event-driven reconcile"):
@@ -53,16 +61,24 @@ def build_diagram(out_base: Path, direction: str) -> None:
             reconcile_lambda = Lambda("reconcile\nLambda")
 
         with Cluster("Shared data"):
-            table = Dynamodb("registry\nDynamoDB")
-            bucket = S3("static site\nS3 bucket")
+            table = Dynamodb("registry\nDynamoDB + GSI")
+            bucket = S3("static bucket\nsites + dashboard")
             ecr = EC2ContainerRegistry("shared\nECR")
 
-        principals >> Edge(label="execute-api:Invoke\n(AWS_IAM)") >> http_api
-        http_api >> Edge(label="proxy") >> api_lambda
-        api_lambda >> Edge(label="PutItem / Query\nper caller ARN") >> table
+        iam_cli >> Edge(label="SigV4") >> http_api
+        iam_cli >> Edge(label="ABAC writes", style="dashed") >> bucket
+        iam_cli >> Edge(label="docker push", style="dashed") >> ecr
 
-        ecr >> Edge(label="ECR Image Action\n(PUSH)") >> eventbridge
-        bucket >> Edge(label="Object Created") >> eventbridge
+        browser >> Edge(label="OAuth PKCE", style="dashed") >> cognito
+        browser >> Edge(label="HTTPS") >> cf
+        cf >> Edge(label="OAC") >> bucket
+        browser >> Edge(label="Bearer JWT", style="dashed") >> http_api
+
+        http_api >> Edge(label="proxy") >> api_lambda
+        api_lambda >> Edge(label="PutItem / Query / Delete") >> table
+
+        ecr >> Edge(label="ECR push") >> eventbridge
+        bucket >> Edge(label="Object created") >> eventbridge
         eventbridge >> Edge(label="invoke") >> reconcile_lambda
 
 

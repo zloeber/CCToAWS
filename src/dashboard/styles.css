@@ -1,0 +1,94 @@
+:root {
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #f6f7f9;
+}
+
+body {
+  margin: 0;
+  padding: 1.5rem;
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+button.primary {
+  background: #1a4d8f;
+  color: #fff;
+  border-color: #1a4d8f;
+}
+
+button.danger {
+  color: #a40000;
+  border-color: #e0a0a0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
+th {
+  background: #f0f2f5;
+  font-weight: 600;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.muted {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.error {
+  color: #a40000;
+  margin: 0.5rem 0;
+}
+
+.empty {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  color: #666;
+}
+
+code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}

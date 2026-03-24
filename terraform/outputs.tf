@@ -50,3 +50,33 @@ output "iam_policy_invoke_api_arn" {
 output "abac_user_tag_key" {
   value = var.abac_user_tag_key
 }
+
+output "static_site_url" {
+  description = "Base URL for static sites when CloudFront is enabled (https://hostname/)."
+  value       = local.static_delivery_enabled ? "https://${var.static_site_hostname}" : null
+}
+
+output "static_cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for static content, if enabled."
+  value       = try(module.cloudfront_static[0].distribution_id, null)
+}
+
+output "static_cloudfront_domain_name" {
+  description = "CloudFront *.cloudfront.net hostname (use if DNS to custom hostname is not ready)."
+  value       = try(module.cloudfront_static[0].distribution_domain_name, null)
+}
+
+output "dashboard_url" {
+  description = "HTTPS URL for the apps dashboard when enabled (with static_site_hostname)."
+  value       = local.dashboard_enabled && var.static_site_hostname != null ? "https://${var.static_site_hostname}/_platform/dashboard/index.html" : null
+}
+
+output "cognito_dashboard_hosted_ui_domain" {
+  description = "Cognito hosted UI hostname (OAuth/OIDC) when the dashboard is enabled."
+  value       = try(module.cognito_dashboard[0].hosted_ui_domain, null)
+}
+
+output "cognito_dashboard_client_id" {
+  description = "Cognito app client ID for the dashboard SPA (JWT audience)."
+  value       = try(module.cognito_dashboard[0].client_id, null)
+}

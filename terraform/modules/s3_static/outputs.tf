@@ -5,3 +5,8 @@ output "bucket_id" {
 output "bucket_arn" {
   value = aws_s3_bucket.this.arn
 }
+
+output "bucket_regional_domain_name" {
+  value       = aws_s3_bucket.this.bucket_regional_domain_name
+  description = "Regional S3 endpoint hostname for CloudFront origin."
+}

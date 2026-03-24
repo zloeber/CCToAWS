@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Signing in…</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <p id="msg">Completing sign-in…</p>
+    <script src="./config.js"></script>
+    <script>
+      (async function () {
+        const cfg = window.CCT_DASHBOARD_CONFIG;
+        if (!cfg) {
+          document.getElementById("msg").textContent = "Missing config.js";
+          return;
+        }
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const verifier = sessionStorage.getItem("pkce_verifier");
+        if (!code || !verifier) {
+          document.getElementById("msg").textContent = "Missing code or PKCE verifier.";
+          return;
+        }
+        const tokenUrl = "https://" + cfg.hostedUiDomain + "/oauth2/token";
+        const body = new URLSearchParams({
+          grant_type: "authorization_code",
+          client_id: cfg.clientId,
+          code: code,
+          redirect_uri: cfg.redirectUri,
+          code_verifier: verifier,
+        });
+        const res = await fetch(tokenUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString(),
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          document.getElementById("msg").textContent = "Token error: " + t;
+          return;
+        }
+        const tok = await res.json();
+        sessionStorage.setItem("access_token", tok.access_token);
+        if (tok.refresh_token) {
+          sessionStorage.setItem("refresh_token", tok.refresh_token);
+        }
+        sessionStorage.removeItem("pkce_verifier");
+        window.location.replace("./index.html");
+      })();
+    </script>
+  </body>
+</html>

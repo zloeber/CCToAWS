@@ -43,6 +43,7 @@ The value for the ABAC prefix usually comes from the **same** session tag (for e
    - `app_id`: lowercase identifier (`a-z0-9-`, 2–63 chars)
    - `revision`: git SHA or timestamp
    - `static_url`: canonical HTTPS base for the site once the shared edge exists — **`https://<shared_host>/<user_tag>/<app_id>/`** (same path as the S3 prefix; trailing slash recommended)
+   - `user_id` (optional but recommended): **ABAC tag value** (for example `user_id`) — must match the **Cognito `email` or `preferred_username`** if you use the web dashboard; otherwise dashboard queries cannot find apps.
 
 ## Workflow (container)
 
@@ -65,6 +66,7 @@ Minimal JSON body for static:
   "app_id": "my-site",
   "deployment_type": "static",
   "revision": "abc123",
+  "user_id": "alice",
   "static_url": "https://apps.example.internal/alice/my-site/"
 }
 ```
@@ -76,6 +78,7 @@ Minimal JSON body for containers:
   "app_id": "api-svc",
   "deployment_type": "container",
   "revision": "2026-03-23T12:00:00Z",
+  "user_id": "alice",
   "image_uri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/cct-user-apps:user-001-api-svc-001",
   "runtime_url": "https://xyz.us-east-1.awsapprunner.com/"
 }

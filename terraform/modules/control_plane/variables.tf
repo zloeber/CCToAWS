@@ -33,3 +33,21 @@ variable "aws_region" {
 variable "aws_account_id" {
   type = string
 }
+
+variable "enable_dashboard" {
+  type        = bool
+  description = "Enable Cognito JWT routes for the web dashboard."
+  default     = false
+}
+
+variable "cognito_jwt_issuer" {
+  type        = string
+  description = "Cognito issuer URL for API Gateway JWT authorizer."
+  default     = ""
+}
+
+variable "cognito_client_id" {
+  type        = string
+  description = "Cognito app client ID (JWT audience)."
+  default     = ""
+}

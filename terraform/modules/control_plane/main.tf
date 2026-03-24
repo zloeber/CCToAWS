@@ -35,8 +35,12 @@ resource "aws_iam_role_policy" "api_lambda" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:Query",
+          "dynamodb:DeleteItem",
         ]
-        Resource = var.dynamodb_table_arn
+        Resource = [
+          var.dynamodb_table_arn,
+          "${var.dynamodb_table_arn}/index/*",
+        ]
       },
     ]
   })
@@ -70,7 +74,7 @@ resource "aws_apigatewayv2_api" "http" {
 
   cors_configuration {
     allow_headers = ["*"]
-    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_methods = ["GET", "POST", "OPTIONS", "DELETE"]
     allow_origins = ["*"]
   }
 }
@@ -80,6 +84,20 @@ resource "aws_apigatewayv2_integration" "api" {
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.api.invoke_arn
   payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  count = var.enable_dashboard ? 1 : 0
+
+  api_id           = aws_apigatewayv2_api.http.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "${var.name_prefix}-cognito-jwt"
+
+  jwt_configuration {
+    audience = [var.cognito_client_id]
+    issuer   = var.cognito_jwt_issuer
+  }
 }
 
 resource "aws_apigatewayv2_route" "register" {
@@ -100,6 +118,36 @@ resource "aws_apigatewayv2_route" "get_app" {
   api_id             = aws_apigatewayv2_api.http.id
   route_key          = "GET /v1/apps/{appId}"
   authorization_type = "AWS_IAM"
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+}
+
+resource "aws_apigatewayv2_route" "dashboard_list" {
+  count = var.enable_dashboard ? 1 : 0
+
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /v1/dashboard/apps"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito[0].id
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+}
+
+resource "aws_apigatewayv2_route" "dashboard_get" {
+  count = var.enable_dashboard ? 1 : 0
+
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "GET /v1/dashboard/apps/{appId}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito[0].id
+  target             = "integrations/${aws_apigatewayv2_integration.api.id}"
+}
+
+resource "aws_apigatewayv2_route" "dashboard_delete" {
+  count = var.enable_dashboard ? 1 : 0
+
+  api_id             = aws_apigatewayv2_api.http.id
+  route_key          = "DELETE /v1/dashboard/apps/{appId}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito[0].id
   target             = "integrations/${aws_apigatewayv2_integration.api.id}"
 }
 

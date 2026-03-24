@@ -18,3 +18,16 @@ name_prefix = "cct"
 default_tags = {
   Owner = "platform"
 }
+
+# Optional: shared HTTPS hostname for static sites (CloudFront → S3). Omit both to skip.
+# ACM certificate must be in us-east-1 (CloudFront requirement), even if aws_region is elsewhere.
+# static_site_hostname         = "apps.example.com"
+# static_site_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# static_site_price_class     = "PriceClass_100"
+
+# Optional: web dashboard (Cognito + JWT API routes + SPA under s3://.../_platform/dashboard/).
+# When static_site_hostname is set, OAuth callbacks default to .../_platform/dashboard/callback.html and index.html.
+# enable_dashboard = true
+# dashboard_cognito_domain_prefix = "cct-dev-dash" # must be globally unique in the account/region
+# dashboard_cognito_callback_urls = ["http://localhost:5173/_platform/dashboard/callback.html"]
+# dashboard_cognito_logout_urls     = ["http://localhost:5173/_platform/dashboard/index.html"]

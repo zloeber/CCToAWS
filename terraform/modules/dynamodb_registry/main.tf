@@ -14,6 +14,23 @@ resource "aws_dynamodb_table" "this" {
     type = "S"
   }
 
+  attribute {
+    name = "userid_pk"
+    type = "S"
+  }
+
+  attribute {
+    name = "userid_sk"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "UserIdIndex"
+    hash_key        = "userid_pk"
+    range_key       = "userid_sk"
+    projection_type = "ALL"
+  }
+
   point_in_time_recovery {
     enabled = var.enable_pitr
   }
